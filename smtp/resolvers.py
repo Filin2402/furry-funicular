@@ -25,6 +25,20 @@ class SMTPResolver:
 class SenderQuotaFactory:
     def get_quota(self, email_suffix: str) -> SenderQuota:
         if email_suffix == 'gmail.com':
-            return SenderQuota(400, 100)
+            return SenderQuota(500, 100)
+        elif email_suffix == 'yandex.ru':
+            return SenderQuota(150, 25)
+        elif email_suffix == 'tut.by':
+            return SenderQuota(500, 100)
+        elif email_suffix == 'rambler.ru':
+            return SenderQuota(200, 200)
+        elif email_suffix == 'ukr.net':
+            return SenderQuota(250, 250)
+        elif email_suffix == 'meta.ua':
+            return SenderQuota(200, 200)
+        elif email_suffix == 'aol.com':
+            return SenderQuota(500, 500)
+        elif email_suffix == 'lycos.com':
+            return SenderQuota(250, 250)
         else:
             return SenderQuota(100, 100)
