@@ -32,11 +32,16 @@ def loads_quota(value: dict) -> SenderQuota:
         'Required messages amount for sender quota'
     assert value.get('messages-at-once'),\
         'Required messages at once amount for sender quota'
-    return SenderQuota(value['messages'], value['messages-at-once'])
+    assert value.get('seconds-interval'),\
+        'Required seconds interval for sender quota'
+    return SenderQuota(value['messages'],
+                       value['messages-at-once'],
+                       value['seconds-interval'])
 
 
 def dumps_quota(quota: SenderQuota) -> dict:
     return {
         'messages': quota.messages,
-        'messages-at-once': quota.messages_at_once
+        'messages-at-once': quota.messages_at_once,
+        'seconds-interval': quota.seconds_interval
     }

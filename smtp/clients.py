@@ -33,8 +33,7 @@ class SMTPClient:
                  message: str):
         server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
         server.login(sender.email, sender.password)
-        server.sendmail(sender.email,
-                        recipients, message)
+        server.sendmail(sender.email, recipients, message)
         server.quit()
 
     def send_multiple(self, sender: SenderAccount, recipients: list,

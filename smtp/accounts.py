@@ -3,9 +3,14 @@ from service.operations import is_email_address, is_password
 
 class SenderQuota:
     def __init__(self, messages: int = 100,
-                 messages_at_once: int = 100):
+                 messages_at_once: int = 100,
+                 seconds_interval: float = 86400):
+        self.__messages = 100
+        self.__messages_at_once = 100
+        self.__seconds_interval = 86400
         self.messages = messages
         self.messages_at_once = messages_at_once
+        self.seconds_interval = seconds_interval
 
     @property
     def messages(self) -> int:
@@ -25,6 +30,15 @@ class SenderQuota:
         assert value > 0, 'Messages amount at once ' \
                           'to send must be positive'
         self.__messages_at_once = value
+
+    @property
+    def seconds_interval(self):
+        return self.__seconds_interval
+
+    @seconds_interval.setter
+    def seconds_interval(self, interval: float):
+        assert interval >= 0, 'Account quota interval must be positive'
+        self.__seconds_interval = interval
 
 
 class SenderAccount:
