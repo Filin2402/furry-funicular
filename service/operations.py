@@ -33,3 +33,7 @@ def is_email_prefix(email: str) -> bool:
 
 def is_email_suffix(email: str) -> bool:
     return is_hostname(email)
+
+
+def is_file_path(path: str) -> bool:
+    return bool(re.match(r'^(\S+/|\\)*\S+$', path))
