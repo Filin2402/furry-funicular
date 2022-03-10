@@ -1,5 +1,5 @@
-from smtp.accounts import SenderQuota
-from smtp.clients import SMTPClient
+from mailing_out.accounts import SenderQuota
+from mailing_out.smtp.clients import SMTPClient
 
 
 class SMTPResolver:
@@ -26,6 +26,10 @@ class SenderQuotaFactory:
     def get_quota(self, email_suffix: str) -> SenderQuota:
         if email_suffix == 'gmail.com':
             return SenderQuota(500, 100)
+        elif email_suffix == 'yahoo.com':
+            return SenderQuota(100, 100, 3600)
+        elif email_suffix == 'hotmail.com':
+            return SenderQuota(300, 300)
         elif email_suffix == 'yandex.ru':
             return SenderQuota(150, 25)
         elif email_suffix == 'tut.by':

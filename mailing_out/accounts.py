@@ -40,6 +40,17 @@ class SenderQuota:
         assert interval >= 0, 'Account quota interval must be positive'
         self.__seconds_interval = interval
 
+    def __str__(self):
+        return f"{self.messages} messages," \
+               f"{self.messages_at_once} at once," \
+               f"{self.seconds_interval} seconds interval"
+
+    def __repr__(self):
+        return f"{type(self).__module__}." \
+               f"{type(self).__name__}({self.messages}, " \
+               f"{self.messages_at_once}, " \
+               f"{self.seconds_interval})"
+
 
 class SenderAccount:
     def __init__(self, email: str = 'norepry@unknown',
@@ -77,3 +88,12 @@ class SenderAccount:
     @quota.setter
     def quota(self, quota: SenderQuota):
         self.__quota = quota
+
+    def __str__(self):
+        return self.email
+
+    def __repr__(self):
+        return f"{type(self).__module__}." \
+               f"{type(self).__name__}({self.email}, " \
+               f"{self.password}, " \
+               f"{repr(self.quota)})"
