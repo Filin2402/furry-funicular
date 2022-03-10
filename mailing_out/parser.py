@@ -1,11 +1,11 @@
 from service.operations import get_email_suffix
-from smtp.accounts import SenderAccount, SenderQuota
-from smtp.resolvers import SenderQuotaFactory
+from mailing_out.accounts import SenderAccount, SenderQuota
+from mailing_out.resolvers import SenderQuotaFactory
 
 
-def loads_account(value: dict,
-                  quota_resolver: SenderQuotaFactory =
-                  SenderQuotaFactory()) -> SenderAccount:
+def load_account(value: dict,
+                 quota_resolver: SenderQuotaFactory =
+                 SenderQuotaFactory()) -> SenderAccount:
     assert value.get('email') is not None,\
         'Required email value for sender account'
     assert value.get('password') is not None,\
@@ -15,19 +15,19 @@ def loads_account(value: dict,
         get_email_suffix(account.email))
     quota_dict = value.get('quota')
     if quota_dict is not None:
-        account.quota = loads_quota(quota_dict)
+        account.quota = load_quota(quota_dict)
     return account
 
 
-def dumps_account(account: SenderAccount) -> dict:
+def dump_account(account: SenderAccount) -> dict:
     return {
         'email': account.email,
         'password': account.password,
-        'quota': dumps_quota(account.quota)
+        'quota': dump_quota(account.quota)
     }
 
 
-def loads_quota(value: dict) -> SenderQuota:
+def load_quota(value: dict) -> SenderQuota:
     assert value.get('messages'),\
         'Required messages amount for sender quota'
     assert value.get('messages-at-once'),\
@@ -39,7 +39,7 @@ def loads_quota(value: dict) -> SenderQuota:
                        value['seconds-interval'])
 
 
-def dumps_quota(quota: SenderQuota) -> dict:
+def dump_quota(quota: SenderQuota) -> dict:
     return {
         'messages': quota.messages,
         'messages-at-once': quota.messages_at_once,
