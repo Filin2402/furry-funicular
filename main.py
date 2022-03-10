@@ -1,4 +1,10 @@
 import logging
+import random
+from argparse import ArgumentParser, Namespace
+from email.encoders import encode_base64
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from logging import StreamHandler, Formatter
 import sys
 from datetime import datetime
@@ -6,7 +12,7 @@ import json
 from smtplib import SMTPException
 
 from mailing_out.parser import load_account
-from service.operations import get_email_suffix
+from service.operations import get_email_suffix, is_file_path, is_email_address
 from mailing_out.resolvers import SMTPResolver
 
 
@@ -14,6 +20,88 @@ def configure_logger():
     handler = StreamHandler(stream=sys.stdout)
     handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
     logging.basicConfig(level='INFO', handlers=[handler])
+
+
+def create_message(attachments: dict, html: str = None,
+                   subject: str = None) -> str:
+    message = MIMEMultipart('alternative')
+    if subject is not None:
+        message['Subject'] = subject
+    if html is not None:
+        html_part = MIMEText(html, 'html')
+        message.attach(html_part)
+    for name in attachments.keys():
+        attachment_part = MIMEBase('application', 'octet-stream')
+        attachment_part.set_payload(attachments[name])
+        encode_base64(attachment_part)
+        attachment_part.add_header('Content-Disposition',
+                                   f"attachment; filename={name}")
+        message.attach(attachment_part)
+    return message.as_string()
+
+
+def initialize_arguments() -> Namespace:
+    arg_parser = ArgumentParser(
+        prog='furry-funicular',
+        description='Mass mailing program ')
+    arg_parser.add_argument(
+        '-s',
+        metavar='file',
+        type=str,
+        required=True,
+        help='senders json file path')
+    arg_parser.add_argument(
+        '-r',
+        metavar='file',
+        type=str,
+        required=True,
+        help='recipients json file path')
+    arg_parser.add_argument(
+        '-t',
+        metavar='subject',
+        type=str,
+        default=None,
+        help='message subject')
+    arg_parser.add_argument(
+        '-w',
+        metavar='file',
+        type=str,
+        default=None,
+        help='message html file path')
+    arg_parser.add_argument(
+        '-a',
+        metavar=('name', 'path'),
+        type=str,
+        nargs=2,
+        default=list(),
+        action='append',
+        help='message attachment name and file path')
+    arg_parser.add_argument(
+        '-m',
+        metavar='amount',
+        type=int,
+        default=None,
+        help='messages limit amount. By default has no limit')
+    arg_parser.add_argument(
+        '-o',
+        type=str,
+        choices={'asc', 'desc', 'rand'},
+        default='asc',
+        help="recipients order: 'asc', 'desc', 'rand'")
+    params = arg_parser.parse_args()
+    assert is_file_path(params.s), f"Invalid senders file " \
+                                   f"path format {params.s}"
+    assert is_file_path(params.r), f"Invalid recipients file " \
+                                   f"path format {params.r}"
+    if params.w is not None:
+        assert is_file_path(params.w), f"Invalid html file " \
+                                       f"path format {params.w}"
+    for attach_params in params.a:
+        assert is_file_path(attach_params[0]),\
+            f"Invalid attachment file path format {params.s}"
+    if params.m is not None:
+        assert params.m > 0, f"Invalid amount of messages {params.m}"
+    return params
 
 
 def do_sending_messages(senders: list, recipients: list,
@@ -69,40 +157,35 @@ def do_sending_messages(senders: list, recipients: list,
 
 
 def main():
-    '''Senders file example senders.json
-    [
-        {
-            'email': 'sender1gmail.com',
-            'password': 'password'
-        },
-        {
-            'email': 'sender2gmail.com',
-            'password': 'password',
-            'quota': {
-                'messages': 900,
-                'messages_at_once': 50,
-                'seconds_interval': 600}
-        }
-    ]
-
-    Recipients file example recipients.json
-    [
-        'recipient1.@gmail.com',
-        'recipient2.@gmail.com',
-    ]
-    '''
-
-    recipients = json.loads(open('recipients.json', 'r').read())
+    configure_logger()
+    params = initialize_arguments()
+    recipients = json.loads(open(params.r, 'r').read())
+    assert type(recipients) == list, "Invalid recipients json file"
+    for recipient in recipients:
+        assert type(recipient) == str, "Invalid recipients json file"
+        assert is_email_address(recipient),\
+            f"Invalid recipient email address '{recipient}'"
+    if params.o == 'rand':
+        random.shuffle(recipients)
+    elif params.o == 'desc':
+        recipients.reverse()
     senders = list()
-    for sender_dict in json.loads(open('senders.json', 'r').read()):
+    for sender_dict in json.loads(open(params.s, 'r').read()):
         senders.append(load_account(sender_dict))
-    do_sending_messages(senders, recipients, 'Hello', SMTPResolver())
+    attachments = dict()
+    for attach_params in params.a:
+        attachments[attach_params[0]] =\
+            open(attach_params[1], 'rb').read()
+    message = create_message(attachments, params.w, params.t)
+    do_sending_messages(senders, recipients, message,
+                        SMTPResolver(), params.m)
 
 
 if __name__ == '__main__':
     try:
-        configure_logger()
         main()
+    except SystemExit as e:
+        pass
     except KeyboardInterrupt:
         logging.critical('Interrupted')
     except BaseException as e:
