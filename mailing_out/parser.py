@@ -1,11 +1,11 @@
 from service.operations import get_email_suffix
 from mailing_out.accounts import SenderAccount, SenderQuota
-from mailing_out.resolvers import SenderQuotaFactory
+from mailing_out.resolvers import QuotaResolver, DefaultQuotaResolver
 
 
 def load_account(value: dict,
-                 quota_resolver: SenderQuotaFactory =
-                 SenderQuotaFactory()) -> SenderAccount:
+                 quota_resolver: QuotaResolver =
+                 DefaultQuotaResolver()) -> SenderAccount:
     assert value.get('email') is not None,\
         'Required email value for sender account'
     assert value.get('password') is not None,\
@@ -45,3 +45,22 @@ def dump_quota(quota: SenderQuota) -> dict:
         'messages-at-once': quota.messages_at_once,
         'seconds-interval': quota.seconds_interval
     }
+
+
+def load_quota_resolver(value: dict) -> QuotaResolver:
+    resolver = QuotaResolver()
+    for email_suffix in value.keys():
+        if email_suffix == 'default':
+            resolver.default_quota = load_quota(value[email_suffix])
+        else:
+            resolver.add_quota(email_suffix,
+                               load_quota(value[email_suffix]))
+    return resolver
+
+
+def dump_quota_resolver(resolver: QuotaResolver) -> dict:
+    result = dict()
+    for email_suffix in resolver.get_suffixes():
+        result[email_suffix] = dump_quota(resolver.get_quota(email_suffix))
+    result['default'] = resolver.default_quota
+    return result

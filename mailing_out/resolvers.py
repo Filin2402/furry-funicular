@@ -1,5 +1,6 @@
 from mailing_out.accounts import SenderQuota
 from mailing_out.smtp.clients import SMTPClient
+from service.operations import is_email_suffix
 
 
 class SMTPResolver:
@@ -22,27 +23,70 @@ class SMTPResolver:
         return client
 
 
-class SenderQuotaFactory:
+class QuotaResolver:
+    def __init__(self):
+        self.__quotas = dict()
+        self.__default_quota = SenderQuota(100, 100, 60)
+
+    @property
+    def default_quota(self):
+        return self.__default_quota
+
+    @default_quota.setter
+    def default_quota(self, quota: SenderQuota):
+        self.__default_quota = quota
+
+    def add_quota(self, suffix: str, quota: SenderQuota):
+        assert is_email_suffix(suffix),\
+            f"Email suffix has invalid format '{suffix}'"
+        self.__quotas[suffix] = quota
+
+    def remove_quota(self, suffix: str):
+        assert is_email_suffix(suffix),\
+            f"Email suffix has invalid format '{suffix}'"
+        self.__quotas.pop(suffix)
+
+    def get_suffixes(self):
+        return self.__quotas.keys()
+
+    def clear_quotas(self):
+        self.__quotas.clear()
+
     def get_quota(self, email_suffix: str) -> SenderQuota:
-        if email_suffix == 'gmail.com':
-            return SenderQuota(500, 100)
-        elif email_suffix == 'yahoo.com':
-            return SenderQuota(100, 100, 3600)
-        elif email_suffix == 'hotmail.com':
-            return SenderQuota(300, 300)
-        elif email_suffix == 'yandex.ru':
-            return SenderQuota(150, 25)
-        elif email_suffix == 'tut.by':
-            return SenderQuota(500, 100)
-        elif email_suffix == 'rambler.ru':
-            return SenderQuota(200, 200)
-        elif email_suffix == 'ukr.net':
-            return SenderQuota(250, 250)
-        elif email_suffix == 'meta.ua':
-            return SenderQuota(200, 200)
-        elif email_suffix == 'aol.com':
-            return SenderQuota(500, 500)
-        elif email_suffix == 'lycos.com':
-            return SenderQuota(250, 250)
-        else:
-            return SenderQuota(100, 100)
+        quota = self.__quotas.get(email_suffix)
+        if quota is None:
+            quota = self.__default_quota
+        return quota
+
+
+class DefaultSMTPResolver(SMTPResolver):
+    def __init__(self):
+        super().__init__()
+        self.add_client(
+            'yahoo.com',
+            SMTPClient('smtp.mail.yahoo.com'))
+        self.add_client(
+            'hotmail.com',
+            SMTPClient('smtp.mail-outlook.com'))
+        self.add_client(
+            'rambler.ru',
+            SMTPClient('smtp.rambler.ru', 587))
+        self.add_client(
+            'tut.by',
+            SMTPClient('smtp.mail.tut.by'))
+
+
+class DefaultQuotaResolver(QuotaResolver):
+    def __init__(self):
+        super().__init__()
+        self.add_quota('gmail.com', SenderQuota(500, 100))
+        self.add_quota('yahoo.com', SenderQuota(100, 100, 3600))
+        self.add_quota('hotmail.com', SenderQuota(300, 300))
+        self.add_quota('yandex.ru', SenderQuota(150, 25))
+        self.add_quota('tut.by', SenderQuota(500, 100))
+        self.add_quota('rambler.ru', SenderQuota(200, 200))
+        self.add_quota('ukr.net', SenderQuota(250, 250))
+        self.add_quota('meta.ua', SenderQuota(200, 200))
+        self.add_quota('aol.com', SenderQuota(500, 500))
+        self.add_quota('lycos.com', SenderQuota(250, 250))
+        self.default_quota = SenderQuota(100, 100, 60)

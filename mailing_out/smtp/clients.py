@@ -7,9 +7,9 @@ from mailing_out.accounts import SenderAccount
 
 
 class SMTPClient:
-    logger = logging.getLogger(__name__)
+    __logger = logging.getLogger(__name__)
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int = 465):
         self.__smtp_host = str()
         self.__smtp_port = int()
         self.__sender = SenderAccount()
@@ -46,21 +46,21 @@ class SMTPClient:
     def connect(self):
         self.__server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
         self.__server.login(self.sender.email, self.sender.password)
-        self.logger.debug(f"Connected to '{self.smtp_host}:"
-                          f"{self.smtp_port}'")
+        self.__logger.debug(f"Connected to '{self.smtp_host}:"
+                            f"{self.smtp_port}'")
 
     def disconnect(self):
         try:
             self.__server.quit()
         except SMTPException as e:
-            self.logger.warning(f"Disconnection error. Error code:'"
-                                f"{e.errno}'. Message '{e.strerror}'")
+            self.__logger.warning(f"Disconnection error. Error data:"
+                                  f"'{e}'")
         finally:
             self.__server = None
-            self.logger.debug(f"Disconnected from '{self.smtp_host}:"
-                              f"{self.smtp_port}'")
+            self.__logger.debug(f"Disconnected from '{self.smtp_host}:"
+                                f"{self.smtp_port}'")
 
     def send_mail(self, recipients: list, message: str):
         self.__server.sendmail(self.sender.email, recipients, message)
-        self.logger.info(f"Sent messages from '{self.sender}' to"
-                         f" {len(recipients)} recipients")
+        self.__logger.info(f"Sent messages from '{self.sender}' to"
+                           f" {len(recipients)} recipients")
