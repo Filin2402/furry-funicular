@@ -11,15 +11,29 @@ from datetime import datetime
 import json
 from smtplib import SMTPException
 
-from mailing_out.parser import load_account
+from mailing_out.parser import load_account, load_quota_resolver
 from service.operations import get_email_suffix, is_file_path, is_email_address
-from mailing_out.resolvers import SMTPResolver
+from mailing_out.resolvers import SMTPResolver, DefaultQuotaResolver
 
 
 def configure_logger():
     handler = StreamHandler(stream=sys.stdout)
-    handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
+    handler.setFormatter(Formatter(
+        fmt='[%(asctime)s: %(levelname)s] %(message)s'))
     logging.basicConfig(level='INFO', handlers=[handler])
+
+
+def assert_file_path(path: str, parameter: str):
+    assert is_file_path(path), f"{parameter} path has invalid format" \
+                               f" '{path}'"
+
+
+def read_file_bytes(path: str) -> bytes:
+    return open(path, 'rb').read()
+
+
+def read_file_content(path: str, encoding: str = 'utf-8') -> str:
+    return read_file_bytes(path).decode(encoding)
 
 
 def create_message(attachments: dict, html: str = None,
@@ -81,26 +95,33 @@ def initialize_arguments() -> Namespace:
         metavar='amount',
         type=int,
         default=None,
-        help='messages limit amount. By default has no limit')
+        help='messages limit amount. By default has no limit (if '
+             'the message is sent by all recipients from the file,'
+             ' sending starts again)')
     arg_parser.add_argument(
         '-o',
         type=str,
+        metavar='order',
         choices={'asc', 'desc', 'rand'},
         default='asc',
-        help="recipients order: 'asc', 'desc', 'rand'")
+        help="recipients order: 'asc', 'desc', 'rand'. By default 'asc'")
+    arg_parser.add_argument(
+        '-q',
+        type=str,
+        metavar='file',
+        default='quota-resolver.json',
+        help="quota resolver json file path. Default value"
+             " 'quota-resolver.json'")
     params = arg_parser.parse_args()
-    assert is_file_path(params.s), f"Invalid senders file " \
-                                   f"path format {params.s}"
-    assert is_file_path(params.r), f"Invalid recipients file " \
-                                   f"path format {params.r}"
+    assert_file_path(params.s, 'Senders file')
+    assert_file_path(params.r, 'Recipients file')
     if params.w is not None:
-        assert is_file_path(params.w), f"Invalid html file " \
-                                       f"path format {params.w}"
+        assert_file_path(params.s, 'Message html file')
     for attach_params in params.a:
-        assert is_file_path(attach_params[0]),\
-            f"Invalid attachment file path format {params.s}"
+        assert_file_path(attach_params[0], 'Message attachment file')
     if params.m is not None:
         assert params.m > 0, f"Invalid amount of messages {params.m}"
+    assert_file_path(params.q, 'Quota resolver file')
     return params
 
 
@@ -149,8 +170,7 @@ def do_sending_messages(senders: list, recipients: list,
                     sent_by_sender += at_once
             except SMTPException as e:
                 logging.info(f"Sending message error at sender '"
-                             f"{sender}'. Code '{e.errno}'."
-                             f" Message: '{e.strerror}'")
+                             f"{sender}'. Error data {e.args}")
             finally:
                 client.disconnect()
                 send_labels[sender] = datetime.now().timestamp()
@@ -159,23 +179,35 @@ def do_sending_messages(senders: list, recipients: list,
 def main():
     configure_logger()
     params = initialize_arguments()
-    recipients = json.loads(open(params.r, 'r').read())
+
+    quota_resolver = DefaultQuotaResolver()
+    try:
+        quota_resolver = load_quota_resolver(json.loads(
+            read_file_content(params.q)))
+    except IOError as e:
+        logging.warning(f"Quota resolver file reading error. {e}")
+
+    recipients = json.loads(read_file_content(params.r))
     assert type(recipients) == list, "Invalid recipients json file"
     for recipient in recipients:
         assert type(recipient) == str, "Invalid recipients json file"
         assert is_email_address(recipient),\
             f"Invalid recipient email address '{recipient}'"
+
+    senders = list()
+    for sender_dict in json.loads(read_file_content(params.s)):
+        senders.append(load_account(sender_dict, quota_resolver))
+
+    attachments = dict()
+    for attach_params in params.a:
+        attachments[attach_params[0]] =\
+            read_file_bytes(attach_params[1])
+
     if params.o == 'rand':
         random.shuffle(recipients)
     elif params.o == 'desc':
         recipients.reverse()
-    senders = list()
-    for sender_dict in json.loads(open(params.s, 'r').read()):
-        senders.append(load_account(sender_dict))
-    attachments = dict()
-    for attach_params in params.a:
-        attachments[attach_params[0]] =\
-            open(attach_params[1], 'rb').read()
+
     message = create_message(attachments, params.w, params.t)
     do_sending_messages(senders, recipients, message,
                         SMTPResolver(), params.m)

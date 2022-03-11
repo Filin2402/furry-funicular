@@ -24,7 +24,7 @@ def is_email_address(email: str) -> bool:
 
 
 def is_hostname(hostname: str) -> bool:
-    return bool(re.match(r'^([^.]+.)*[^.]$', hostname))
+    return bool(re.match(r'^([^.]+.)*[^.]+$', hostname))
 
 
 def is_email_prefix(email: str) -> bool:

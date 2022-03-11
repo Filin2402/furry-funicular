@@ -1,0 +1,57 @@
+{
+  "gmail.com": {
+    "messages": 500,
+    "messages-at-once": 100,
+    "seconds-interval": 86400
+  },
+  "yahoo.com": {
+    "messages": 100,
+    "messages-at-once": 100,
+    "seconds-interval": 3600
+  },
+  "hotmail.com": {
+    "messages": 300,
+    "messages-at-once": 300,
+    "seconds-interval": 86400
+  },
+  "yandex.ru": {
+    "messages": 150,
+    "messages-at-once": 25,
+    "seconds-interval": 86400
+  },
+  "tut.by": {
+    "messages": 500,
+    "messages-at-once": 100,
+    "seconds-interval": 86400
+  },
+  "rambler.ru": {
+    "messages": 200,
+    "messages-at-once": 200,
+    "seconds-interval": 86400
+  },
+  "ukr.net": {
+    "messages": 250,
+    "messages-at-once": 250,
+    "seconds-interval": 86400
+  },
+  "meta.ua": {
+    "messages": 200,
+    "messages-at-once": 200,
+    "seconds-interval": 86400
+  },
+  "aol.com": {
+    "messages": 500,
+    "messages-at-once": 500,
+    "seconds-interval": 86400
+  },
+  "lycos.com": {
+    "messages": 250,
+    "messages-at-once": 250,
+    "seconds-interval": 86400
+  },
+  "default": {
+    "messages": 100,
+    "messages-at-once": 100,
+    "seconds-interval": 60
+  }
+}
