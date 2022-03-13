@@ -20,7 +20,7 @@ def get_email_suffix(email: str) -> str:
 
 
 def is_email_address(email: str) -> bool:
-    return bool(re.match(r'^([^.]+.)*[^.]+@([^.]+.)*[^.]$', email))
+    return bool(re.match(r'^([^.]+.)*[^.]+@([^.]+.)*[^.]+$', email))
 
 
 def is_hostname(hostname: str) -> bool:

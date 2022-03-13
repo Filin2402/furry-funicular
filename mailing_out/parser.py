@@ -28,11 +28,11 @@ def dump_account(account: SenderAccount) -> dict:
 
 
 def load_quota(value: dict) -> SenderQuota:
-    assert value.get('messages'),\
+    assert value.get('messages') is not None,\
         'Required messages amount for sender quota'
-    assert value.get('messages-at-once'),\
+    assert value.get('messages-at-once') is not None,\
         'Required messages at once amount for sender quota'
-    assert value.get('seconds-interval'),\
+    assert value.get('seconds-interval') is not None,\
         'Required seconds interval for sender quota'
     return SenderQuota(value['messages'],
                        value['messages-at-once'],

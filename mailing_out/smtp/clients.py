@@ -51,7 +51,8 @@ class SMTPClient:
 
     def disconnect(self):
         try:
-            self.__server.quit()
+            if self.__server is not None:
+                self.__server.quit()
         except SMTPException as e:
             self.__logger.warning(f"Disconnection error. Error data:"
                                   f"'{e}'")
