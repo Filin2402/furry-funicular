@@ -10,7 +10,15 @@ that all recipients will receive the message exactly, the number of
 sent messages depends on the capabilities of the sender accounts and
 SMTP servers policies you use
 
+###Requirements
+
+Installed Python 3 interpreter. The interpreter must be accessible
+from the console
+
 ###Usage
+
+For first program launch you need to run script `prestart.sh`. It will
+install all required libraries
 
 `furry-funicular --help` - view help page
 
@@ -23,6 +31,9 @@ to emails specified in 'recipients.json'
 `furry-funicular ... -w folder/message_body.html` - set html body for
 message
 
+`furry-funicular ... -e "some_address@mail.com"` - set message sender
+name. By default for every sender uses its own address
+
 `furry-funicular ... -a "Some file 1.txt" folder/file1.txt -a "Some
 file 2.txt" folder/file2.txt ...` - attach files to message
 
@@ -33,7 +44,7 @@ to the same 1000 recipients
 
 `furry-funicular ... -o asc/desc/rand` - set order for sending messages
 to recipients from 'recipients.json'. 'asc' - recipients in ascending
-order, 'desc' - in descending order, 'rand' - random order
+order (default), 'desc' - in descending order, 'rand' - random order
 
 `furry-funicular ... -q folder/resolver.json` - quota resolver file
 path. By default set to 'quota-resolver.json'. If file is not read,
@@ -41,7 +52,7 @@ uses standard resolver defined in code
 
 ###Recipients file
 
-Recipients file must have json format. Example of the contents file:
+Recipients file must have json format. File content example:
 ```json
 [
 "recipient1@gmail.com",
@@ -53,7 +64,7 @@ Recipients file must have json format. Example of the contents file:
 
 ###Senders file
 
-Senders file must have json format. Example of the contents file:
+Senders file must have json format. File content example:
 ```json
 [
   {
@@ -97,7 +108,7 @@ at once
 Quota resolver is entity that determines the default quota for email
 address by its suffix. There is default quota resolver determined in
 code. You specify your custom quota resolver using option `-q`. Quota
-resolver file must have json format. Example of the contents file:
+resolver file must have json format. File content example:
 ```json
 {
   "gmail.com": {
@@ -122,3 +133,9 @@ resolver file must have json format. Example of the contents file:
   }
 }
 ```
+
+###Sender account basic requirements
+
+- all security features except for authorization by login and
+password must be disabled
+- must be enabled and configured access through external applications

@@ -10,17 +10,18 @@ import sys
 from datetime import datetime
 import json
 from smtplib import SMTPException
+from mimesis import Person
 
 from mailing_out.parser import load_account, load_quota_resolver
 from service.operations import get_email_suffix, is_file_path, is_email_address
-from mailing_out.resolvers import SMTPResolver, DefaultQuotaResolver
+from mailing_out.resolvers import DefaultQuotaResolver, DefaultSMTPResolver, SMTPResolver
 
 
 def configure_logger():
     handler = StreamHandler(stream=sys.stdout)
     handler.setFormatter(Formatter(
         fmt='[%(asctime)s: %(levelname)s] %(message)s'))
-    logging.basicConfig(level='INFO', handlers=[handler])
+    logging.basicConfig(level='DEBUG', handlers=[handler])
 
 
 def assert_file_path(path: str, parameter: str):
@@ -36,9 +37,16 @@ def read_file_content(path: str, encoding: str = 'utf-8') -> str:
     return read_file_bytes(path).decode(encoding)
 
 
-def create_message(attachments: dict, html: str = None,
-                   subject: str = None) -> str:
+def create_message(attachments: dict, recipient: str = None,
+                   html: str = None, subject: str = None,
+                   sender: str = None) -> MIMEMultipart:
     message = MIMEMultipart('alternative')
+    if recipient is not None:
+        message['To'] = recipient
+    else:
+        message['To'] = Person().email()
+    if sender is not None:
+        message['From'] = sender
     if subject is not None:
         message['Subject'] = subject
     if html is not None:
@@ -51,7 +59,7 @@ def create_message(attachments: dict, html: str = None,
         attachment_part.add_header('Content-Disposition',
                                    f"attachment; filename={name}")
         message.attach(attachment_part)
-    return message.as_string()
+    return message
 
 
 def initialize_arguments() -> Namespace:
@@ -75,13 +83,20 @@ def initialize_arguments() -> Namespace:
         metavar='subject',
         type=str,
         default=None,
-        help='message subject')
+        help="message subject ('Subject' header)")
     arg_parser.add_argument(
         '-w',
         metavar='file',
         type=str,
         default=None,
         help='message html file path')
+    arg_parser.add_argument(
+        '-e',
+        metavar='email',
+        type=str,
+        default=None,
+        help="message sender email ('From' header). By default "
+             "for every sender uses its own address")
     arg_parser.add_argument(
         '-a',
         metavar=('name', 'path'),
@@ -95,8 +110,8 @@ def initialize_arguments() -> Namespace:
         metavar='amount',
         type=int,
         default=None,
-        help='messages limit amount. By default has no limit (if '
-             'the message is sent by all recipients from the file,'
+        help='messages limit amount. By default has no limit (when '
+             'the message was sent to all recipients from the file,'
              ' sending starts again)')
     arg_parser.add_argument(
         '-o',
@@ -122,11 +137,16 @@ def initialize_arguments() -> Namespace:
     if params.m is not None:
         assert params.m > 0, f"Invalid amount of messages {params.m}"
     assert_file_path(params.q, 'Quota resolver file')
+    if params.e is not None:
+        assert is_email_address(params.e), f"Invalid sender email" \
+                                       f"format '{params.e}'"
     return params
 
 
 def do_sending_messages(senders: list, recipients: list,
-                        message: str, client_resolver: SMTPResolver,
+                        message: MIMEMultipart,
+                        client_resolver: SMTPResolver,
+                        senders_in_message: bool,
                         messages_amount: int = None,
                         summary_interval: float = 20):
     send_labels = dict()
@@ -160,7 +180,9 @@ def do_sending_messages(senders: list, recipients: list,
                         at_once = messages - sent_by_sender - 1
                     rec_at_once = recipients[
                                   position:position + at_once]
-                    client.send_mail(rec_at_once, message)
+                    if senders_in_message:
+                        message['From'] = sender.email
+                    client.send_mail(rec_at_once, message.as_string())
                     summary_sent += at_once
                     position += at_once
                     if position >= len(recipients):
@@ -208,9 +230,15 @@ def main():
     elif params.o == 'desc':
         recipients.reverse()
 
-    message = create_message(attachments, params.w, params.t)
+    html_content = None
+    if params.w is not None:
+        html_content = read_file_content(params.w)
+
+    message = create_message(attachments, None, html_content, params.t,
+                             params.e)
     do_sending_messages(senders, recipients, message,
-                        SMTPResolver(), params.m)
+                        DefaultSMTPResolver(), params.e is None,
+                        params.m)
 
 
 if __name__ == '__main__':

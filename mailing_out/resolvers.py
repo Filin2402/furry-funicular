@@ -5,19 +5,19 @@ from service.operations import is_email_suffix
 
 class SMTPResolver:
     def __init__(self):
-        self._clients = dict()
+        self.__clients = dict()
 
     def add_client(self, suffix: str, client: SMTPClient):
-        self._clients[suffix] = client
+        self.__clients[suffix] = client
 
     def remove_client(self, suffix):
-        self._clients.pop(suffix)
+        self.__clients.pop(suffix)
 
     def clear_clients(self):
-        self._clients = dict()
+        self.__clients = dict()
 
     def get_client(self, email_suffix: str) -> SMTPClient:
-        client = self._clients.get(email_suffix)
+        client = self.__clients.get(email_suffix)
         if client is None:
             client = SMTPClient('smtp.' + email_suffix, 465)
         return client
