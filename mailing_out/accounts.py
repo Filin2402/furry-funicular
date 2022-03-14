@@ -23,7 +23,7 @@ class SenderQuota:
 
     @property
     def messages_at_once(self) -> int:
-        return self.__messages
+        return self.__messages_at_once
 
     @messages_at_once.setter
     def messages_at_once(self, value: int):

@@ -1,10 +1,6 @@
 import logging
 import random
 from argparse import ArgumentParser, Namespace
-from email.encoders import encode_base64
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from logging import StreamHandler, Formatter
 import sys
 from datetime import datetime
@@ -13,6 +9,7 @@ from smtplib import SMTPException
 from mimesis import Person
 
 from mailing_out.parser import load_account, load_quota_resolver
+from mailing_out.messages import EmailMessage
 from service.operations import get_email_suffix, is_file_path, is_email_address
 from mailing_out.resolvers import DefaultQuotaResolver, DefaultSMTPResolver, SMTPResolver
 
@@ -39,26 +36,20 @@ def read_file_content(path: str, encoding: str = 'utf-8') -> str:
 
 def create_message(attachments: dict, recipient: str = None,
                    html: str = None, subject: str = None,
-                   sender: str = None) -> MIMEMultipart:
-    message = MIMEMultipart('alternative')
+                   sender: str = None) -> EmailMessage:
+    message = EmailMessage()
     if recipient is not None:
-        message['To'] = recipient
+        message.set_header('To', recipient)
     else:
-        message['To'] = Person().email()
+        message.set_header('To', Person().email())
     if sender is not None:
-        message['From'] = sender
+        message.set_header('From', sender)
     if subject is not None:
-        message['Subject'] = subject
+        message.set_header('Subject', subject)
     if html is not None:
-        html_part = MIMEText(html, 'html')
-        message.attach(html_part)
+        message.set_content('html', html)
     for name in attachments.keys():
-        attachment_part = MIMEBase('application', 'octet-stream')
-        attachment_part.set_payload(attachments[name])
-        encode_base64(attachment_part)
-        attachment_part.add_header('Content-Disposition',
-                                   f"attachment; filename={name}")
-        message.attach(attachment_part)
+        message.set_attachment(name, attachments[name])
     return message
 
 
@@ -144,7 +135,7 @@ def initialize_arguments() -> Namespace:
 
 
 def do_sending_messages(senders: list, recipients: list,
-                        message: MIMEMultipart,
+                        message: EmailMessage,
                         client_resolver: SMTPResolver,
                         senders_in_message: bool,
                         messages_amount: int = None,
@@ -181,7 +172,7 @@ def do_sending_messages(senders: list, recipients: list,
                     rec_at_once = recipients[
                                   position:position + at_once]
                     if senders_in_message:
-                        message['From'] = sender.email
+                        message.set_header('From', sender.email)
                     client.send_mail(rec_at_once, message.as_string())
                     summary_sent += at_once
                     position += at_once
