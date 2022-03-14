@@ -5,9 +5,9 @@
     "seconds-interval": 86400
   },
   "yahoo.com": {
-    "messages": 100,
+    "messages": 400,
     "messages-at-once": 100,
-    "seconds-interval": 3600
+    "seconds-interval": 86400
   },
   "hotmail.com": {
     "messages": 300,
@@ -30,14 +30,14 @@
     "seconds-interval": 86400
   },
   "ukr.net": {
-    "messages": 250,
+    "messages": 1000,
     "messages-at-once": 250,
     "seconds-interval": 86400
   },
   "meta.ua": {
-    "messages": 200,
-    "messages-at-once": 200,
-    "seconds-interval": 86400
+    "messages": 2,
+    "messages-at-once": 1,
+    "seconds-interval": 60
   },
   "aol.com": {
     "messages": 500,
