@@ -69,11 +69,12 @@ class DefaultSMTPResolver(SMTPResolver):
             'hotmail.com',
             SMTPClient('smtp.mail-outlook.com'))
         self.add_client(
-            'rambler.ru',
-            SMTPClient('smtp.rambler.ru', 587))
-        self.add_client(
             'tut.by',
             SMTPClient('smtp.mail.tut.by'))
+        mail_ru_client = SMTPClient('smtp.mail.ru')
+        self.add_client('mail.ru', mail_ru_client)
+        self.add_client('list.ru', mail_ru_client)
+        self.add_client('inbox.ru', mail_ru_client)
 
 
 class DefaultQuotaResolver(QuotaResolver):

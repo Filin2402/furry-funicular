@@ -17,9 +17,6 @@ from the console
 
 ###Usage
 
-For first program launch you need to run script `prestart.sh`. It will
-install all required libraries
-
 `furry-funicular --help` - view help page
 
 `furry-funicular -r recipients.json -s senders.json` - start sending

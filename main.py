@@ -6,7 +6,6 @@ import sys
 from datetime import datetime
 import json
 from smtplib import SMTPException
-from mimesis import Person
 
 from mailing_out.parser import load_account, load_quota_resolver
 from mailing_out.messages import EmailMessage
@@ -34,14 +33,10 @@ def read_file_content(path: str, encoding: str = 'utf-8') -> str:
     return read_file_bytes(path).decode(encoding)
 
 
-def create_message(attachments: dict, recipient: str = None,
-                   html: str = None, subject: str = None,
+def create_message(attachments: dict, html: str = None,
+                   subject: str = None,
                    sender: str = None) -> EmailMessage:
     message = EmailMessage()
-    if recipient is not None:
-        message.set_header('To', recipient)
-    else:
-        message.set_header('To', Person().email())
     if sender is not None:
         message.set_header('From', sender)
     if subject is not None:
@@ -173,6 +168,7 @@ def do_sending_messages(senders: list, recipients: list,
                                   position:position + at_once]
                     if senders_in_message:
                         message.set_header('From', sender.email)
+                    message.set_header('To', ','.join(rec_at_once))
                     client.send_mail(rec_at_once, message.as_string())
                     summary_sent += at_once
                     position += at_once
@@ -225,7 +221,7 @@ def main():
     if params.w is not None:
         html_content = read_file_content(params.w)
 
-    message = create_message(attachments, None, html_content, params.t,
+    message = create_message(attachments, html_content, params.t,
                              params.e)
     do_sending_messages(senders, recipients, message,
                         DefaultSMTPResolver(), params.e is None,
