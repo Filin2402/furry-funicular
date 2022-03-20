@@ -13,6 +13,8 @@ class SMTPClient:
         self.__smtp_host = str()
         self.__smtp_port = int()
         self.__sender = SenderAccount()
+        self.__ssl_enabled = True
+        self.__tls_enabled = False
         self.__server = None
         self.smtp_host = host
         self.smtp_port = port
@@ -43,8 +45,31 @@ class SMTPClient:
     def sender(self, sender: SenderAccount):
         self.__sender = sender
 
+    @property
+    def ssl_enabled(self):
+        return self.__ssl_enabled
+
+    @ssl_enabled.setter
+    def ssl_enabled(self, enabled: bool):
+        self.__ssl_enabled = enabled
+
+    @property
+    def tls_enabled(self):
+        return self.__tls_enabled
+
+    @tls_enabled.setter
+    def tls_enabled(self, enabled: bool):
+        self.__tls_enabled = enabled
+
     def connect(self):
-        self.__server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
+        if self.ssl_enabled:
+            self.__server = smtplib.SMTP_SSL(self.smtp_host,
+                                             self.smtp_port)
+        else:
+            self.__server = smtplib.SMTP(self.smtp_host,
+                                         self.smtp_port)
+        if self.tls_enabled:
+            self.__server.starttls()
         self.__server.login(self.sender.email, self.sender.password)
         self.__logger.debug(f"Connected to '{self.smtp_host}:"
                             f"{self.smtp_port}'")
