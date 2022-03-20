@@ -91,6 +91,8 @@ class DefaultQuotaResolver(QuotaResolver):
         self.add_quota('gmail.com', SenderQuota(500, 100))
         self.add_quota('yahoo.com', SenderQuota(100, 100, 3600))
         self.add_quota('hotmail.com', SenderQuota(300, 300))
+        self.add_quota('office365.com', SenderQuota(30, 30, 60))
+        self.add_quota('amur-tiger.ru', SenderQuota(30, 30, 60))
         self.add_quota('yandex.ru', SenderQuota(150, 25))
         self.add_quota('tut.by', SenderQuota(500, 100))
         self.add_quota('rambler.ru', SenderQuota(200, 200))

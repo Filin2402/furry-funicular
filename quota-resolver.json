@@ -14,6 +14,16 @@
     "messages-at-once": 300,
     "seconds-interval": 86400
   },
+  "office365.com": {
+    "messages": 30,
+    "messages-at-once": 30,
+    "seconds-interval": 60
+  },
+  "amur-tiger.ru": {
+    "messages": 30,
+    "messages-at-once": 30,
+    "seconds-interval": 60
+  },
   "yandex.ru": {
     "messages": 150,
     "messages-at-once": 25,
