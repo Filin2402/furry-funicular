@@ -71,14 +71,11 @@ class DefaultSMTPResolver(SMTPResolver):
         self.add_client(
             'tut.by',
             SMTPClient('smtp.mail.tut.by'))
-        self.add_client(
-            'office365.com',
-            SMTPClient('smtp.office365.com', 587)
-        )
-        self.add_client(
-            'amur-tiger.ru',
-            SMTPClient('smtp.office365.com', 587)
-        )
+        office_client = SMTPClient('smtp.office365.com', 587)
+        office_client.ssl_enabled = False
+        office_client.tls_enabled = True
+        self.add_client('office365.com', office_client)
+        self.add_client('amur-tiger.ru', office_client)
         mail_ru_client = SMTPClient('smtp.mail.ru')
         self.add_client('mail.ru', mail_ru_client)
         self.add_client('list.ru', mail_ru_client)
