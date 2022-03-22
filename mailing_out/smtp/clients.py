@@ -82,9 +82,11 @@ class SMTPClient:
             self.__logger.warning(f"Disconnection error. Error data:"
                                   f"'{e}'")
         finally:
+            if self.__server is not None:
+                self.__logger.debug(f"Disconnected from "
+                                    f"'{self.smtp_host}:"
+                                    f"{self.smtp_port}'")
             self.__server = None
-            self.__logger.debug(f"Disconnected from '{self.smtp_host}:"
-                                f"{self.smtp_port}'")
 
     def send_mail(self, recipients: list, message: str):
         self.__server.sendmail(self.sender.email, recipients, message)
