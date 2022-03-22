@@ -10,12 +10,12 @@ that all recipients will receive the message exactly, the number of
 sent messages depends on the capabilities of the sender accounts and
 SMTP servers policies you use
 
-###Requirements
+### Requirements
 
 Installed Python 3 interpreter. The interpreter must be accessible
 from the console
 
-###Usage
+### Usage
 
 `furry-funicular --help` - view help page
 
@@ -39,6 +39,10 @@ If you have 4000 recipients if 'recipients.json' for example, program
 will send message to 4000 recipients and then send messages repeatedly
 to the same 1000 recipients
 
+`furry-funicular ... -f folder/left-recipients.json` - set json file
+path for left recipients (that did not receive message) output after
+program ends. Left recipients are not recorded by default
+
 `furry-funicular ... -o asc/desc/rand` - set order for sending messages
 to recipients from 'recipients.json'. 'asc' - recipients in ascending
 order (default), 'desc' - in descending order, 'rand' - random order
@@ -47,7 +51,7 @@ order (default), 'desc' - in descending order, 'rand' - random order
 path. By default set to 'quota-resolver.json'. If file is not read,
 uses standard resolver defined in code
 
-###Recipients file
+### Recipients file
 
 Recipients file must have json format. File content example:
 ```json
@@ -59,7 +63,7 @@ Recipients file must have json format. File content example:
 ]
 ```
 
-###Senders file
+### Senders file
 
 Senders file must have json format. File content example:
 ```json
@@ -100,7 +104,7 @@ will loop the following:
 at once
 - waits 650.25353 seconds
 
-###Quota resolver
+### Quota resolver
 
 Quota resolver is entity that determines the default quota for email
 address by its suffix. There is default quota resolver determined in
@@ -131,7 +135,7 @@ resolver file must have json format. File content example:
 }
 ```
 
-###Sender account basic requirements
+### Sender account basic requirements
 
 - all security features except for authorization by login and
 password must be disabled
