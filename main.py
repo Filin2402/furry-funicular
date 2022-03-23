@@ -1,6 +1,7 @@
 import logging
 import random
 from argparse import ArgumentParser, Namespace
+from collections import deque
 from logging import StreamHandler, Formatter
 import sys
 from datetime import datetime
@@ -149,7 +150,7 @@ def do_sending_messages(senders: list, recipients: list,
                         client_resolver: SMTPResolver,
                         senders_in_message: bool,
                         messages_amount: int = None,
-                        summary_interval: float = 20):
+                        summary_interval: float = 20) -> list:
     assert len(senders) > 0, "There are no senders to send messages"
     assert len(recipients) > 0, "There are no recipients for " \
                                 "receiving messages"
@@ -196,7 +197,7 @@ def do_sending_messages(senders: list, recipients: list,
                         position += at_once
                         if position >= len(recipients):
                             logging.info(f"Messages was sent to all "
-                                         f"{len(recipients)}"
+                                         f" {len(recipients)}"
                                          f"recipients")
                             position = 0
                         sent_by_sender += at_once
@@ -213,6 +214,10 @@ def do_sending_messages(senders: list, recipients: list,
             recipients_left = recipients[position:]
         wrapper.result = recipients_left
         raise wrapper
+    recipients_left = list()
+    if summary_sent < len(recipients):
+        recipients_left = recipients[position:]
+    return recipients_left
 
 
 def main():
@@ -226,12 +231,17 @@ def main():
     except IOError as e:
         logging.warning(f"Quota resolver file reading error. {e}")
 
-    recipients = json.loads(read_file_content(params.r))
-    assert type(recipients) == list, "Invalid recipients json file"
-    for recipient in recipients:
+    raw_recipients = json.loads(read_file_content(params.r))
+    assert type(raw_recipients) == list, "Invalid recipients json file"
+    recipients = deque()
+    for recipient in raw_recipients:
         assert type(recipient) == str, "Invalid recipients json file"
-        assert is_email_address(recipient),\
-            f"Invalid recipient email address '{recipient}'"
+        if is_email_address(recipient):
+            recipients.append(recipient)
+        else:
+            logging.warning(f"Invalid recipient email address "
+                            f"'{recipient}'")
+    recipients = list(recipients)
 
     senders = list()
     for sender_dict in json.loads(read_file_content(params.s)):
@@ -253,16 +263,19 @@ def main():
 
     message = create_message(attachments, html_content, params.t,
                              params.e)
+    left = list()
     try:
-        do_sending_messages(senders, recipients, message,
-                            DefaultSMTPResolver(), params.e is None,
-                            params.m)
+        left = do_sending_messages(senders, recipients, message,
+                                   DefaultSMTPResolver(),
+                                   params.e is None, params.m)
     except WithResultException as e:
+        left = e.result
+        raise e.root_cause
+    finally:
         if params.f is not None:
-            write_file_content(params.f, json.dumps(e.result))
+            write_file_content(params.f, json.dumps(left))
             logging.info(f"Left recipients saved into file "
                          f"'{params.f}'")
-        raise e.root_cause
 
 
 if __name__ == '__main__':
